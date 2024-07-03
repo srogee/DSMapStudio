@@ -1,6 +1,7 @@
 ﻿using Andre.Formats;
 using SoulsFormats;
 using StudioCore.Platform;
+using StudioCore.Resource;
 using StudioCore.Scene;
 using System;
 using System.Collections.Generic;
@@ -180,6 +181,39 @@ public class ObjectContainer
 
 public class Map : ObjectContainer
 {
+    public void Export()
+    {
+        var exportDir = @"C:\Users\rid3r\Documents\SoulsGame\Exports";
+
+        // Export collision
+        var scene = new SharpGLTF.Scenes.SceneBuilder();
+
+        foreach (Entity obj in Objects)
+        {
+            var mrp = obj.RenderSceneMesh as MeshRenderableProxy;
+            if (mrp != null)
+            {
+                var handle = mrp.ResourceHandle as ResourceHandle<HavokCollisionResource>;
+                if (handle != null)
+                {
+                    var resource = handle.Get();
+                    if (resource != null)
+                    {
+                        for (int i = 0; i < resource.CPUMeshes.Count; i++)
+                        {
+                            var inst = scene.AddRigidMesh(resource.CPUMeshes[i], obj.GetWorldMatrix());
+                            var name = resource.CPUMeshes.Count > 1 ? obj.Name + "_" + (i + 1) : obj.Name;
+                            inst.WithName(name);
+                        }
+                    }
+                }
+            }
+        }
+
+        var model = scene.ToGltf2();
+        model.SaveGLTF(Path.Combine(exportDir, Name + "_collision.gltf"));
+    }
+
     // This keeps all models that exist when loading a map, so that saves
     // can be byte perfect
     private readonly Dictionary<string, IMsbModel> LoadedModels = new();

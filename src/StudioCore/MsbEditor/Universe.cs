@@ -1042,6 +1042,8 @@ public class Universe
 
             // Check for duplicate EntityIDs
             CheckDupeEntityIDs(map);
+
+            map.Export();
         }
         catch (Exception e)
         {

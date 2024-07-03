@@ -1,4 +1,6 @@
 ﻿using HKX2;
+using SharpGLTF.Geometry;
+using SharpGLTF.Materials;
 using SoulsFormats;
 using StudioCore.Scene;
 using System;
@@ -9,10 +11,13 @@ using Veldrid.Utilities;
 using Vortice.Vulkan;
 
 namespace StudioCore.Resource;
+using VERTEX = SharpGLTF.Geometry.VertexTypes.VertexPosition;
 
 public class HavokCollisionResource : IResource, IDisposable
 {
+    private static MaterialBuilder material = new MaterialBuilder("default").WithBaseColor(new Vector4(1, 1, 1, 1));
     public CollisionSubmesh[] GPUMeshes;
+    public List<MeshBuilder<VERTEX>> CPUMeshes = new();
     public HKX Hkx;
     public hkRootLevelContainer Hkx2;
 
@@ -577,6 +582,21 @@ public class HavokCollisionResource : IResource, IDisposable
             MeshIndices[i + 1] = i + 1;
             MeshIndices[i + 2] = i + 2;
         }
+
+        var cpuMesh = new MeshBuilder<VERTEX>("submesh_" + (CPUMeshes.Count + 1));
+        var prim = cpuMesh.UsePrimitive(material);
+
+        VERTEX NewVertex(Vector3 Location)
+        {
+            return new VERTEX(Location.X, Location.Y, Location.Z);
+        }
+
+        for (var i = 0; i < indices.Count; i += 3)
+        {
+            prim.AddTriangle(NewVertex(MeshVertices[MeshIndices[i]].Position), NewVertex(MeshVertices[MeshIndices[i + 1]].Position), NewVertex(MeshVertices[MeshIndices[i + 2]].Position));
+        }
+
+        CPUMeshes.Add(cpuMesh);
 
         dest.GeomBuffer.UnmapIBuffer();
         dest.GeomBuffer.UnmapVBuffer();
